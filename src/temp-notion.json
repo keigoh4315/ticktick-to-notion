@@ -1,0 +1,35 @@
+{
+  "parent": { "database_id": "{{yourDatabaseId}}" },
+  "properties": {
+    "TaskName": {
+      "title": [{ "text": { "content": "{{TaskName}}" } }]
+    },
+    "TaskContent": {
+      "rich_text": [{ "text": { "content": "{{TaskContent}}" } }]
+    },
+    "CompleteDate": {
+      "date": { "start": "{{CompleteDate}}" }
+    },
+    "StartDate": {
+      "date": { "start": "{{StartDate}}" }
+    },
+    "EndDate": {
+      "date": { "start": "{{EndDate}}" }
+    },
+    "List": {
+      "select": { "name": "{{List}}" }
+    },
+    "Priority": {
+      "rich_text": [{ "text": { "content": "{{Priority}}" } }]
+    },
+    "Tag": {
+      "multi_select": [{ "name": "{{Tag}}" }, { "name": "{{Tag}}" }]
+    },
+    "LinkToTask": {
+      "url": "{{LinkToTask}}"
+    },
+    "CreatedAt": {
+      "date": { "start": "{{CreatedAt}}" }
+    }
+  }
+}

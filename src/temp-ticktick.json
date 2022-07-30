@@ -1,0 +1,12 @@
+{
+  "TaskName": "{{TaskName}}",
+  "TaskContent": "{{TaskContent}}",
+  "CompleteDate": "{{CompleteDate}}",
+  "StartDate": "{{StartDate}}",
+  "EndDate": "{{EndDate}}",
+  "List": "{{List}}",
+  "Priority": "{{Priority}}",
+  "Tag": "{{Tag}}",
+  "LinkToTask": "{{LinkToTask}}",
+  "CreatedAt": "{{CreatedAt}}"
+}
