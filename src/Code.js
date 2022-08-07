@@ -56,6 +56,10 @@ function doPost(e) {
   }
 }
 
+function test() {
+  doPost(null);
+}
+
 function generateParams(data, databaseId) {
   let params = {
     parent: { database_id: databaseId },
