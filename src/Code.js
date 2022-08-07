@@ -25,9 +25,13 @@ function doPost(e) {
   const properties = PropertiesService.getScriptProperties();
   const notion = new Notion(properties.getProperty("NOTION_TOKEN"));
 
-  const jsonString = e.postData.getDataAsString();
-  // const jsonString = // json sample for test
-  //   '{\n  "TaskName": "Sample",\n  "TaskContent": "line one\r\nline two\r\nline three\nlist item 1\nlist item 2",\n  "CompleteDate": "July 27 2022 at 05:10PM",\n  "StartDate": "July 25 2022",\n  "EndDate": "July 27 2022",\n  "List": "Inbox",\n  "Priority": "None",\n  "Tag": "#Tag1 #Tag2",\n  "LinkToTask": "https://ticktick.com/home",\n  "CreatedAt": "July 25, 2022 at 09:20AM"\n}\n';
+  let jsonString;
+  if (typeof e === "undefined") {
+    jsonString = // json sample for test
+      '{\n  "TaskName": "Sample",\n  "TaskContent": "line one\r\nline two\r\nline three\nlist item 1\nlist item 2",\n  "CompleteDate": "July 27 2022 at 05:10PM",\n  "StartDate": "July 25 2022",\n  "EndDate": "July 27 2022",\n  "List": "Inbox",\n  "Priority": "None",\n  "Tag": "#Tag1 #Tag2",\n  "LinkToTask": "https://ticktick.com/home",\n  "CreatedAt": "July 25, 2022 at 09:20AM"\n}\n';
+  } else {
+    jsonString = e.postData.getDataAsString();
+  }
 
   const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
   const formattedTaskContent = convertNL(jsonString.match(pattern)[0]);
@@ -54,10 +58,6 @@ function doPost(e) {
     const options = { name: "TickTick to Notion" };
     GmailApp.sendEmail(recipient, subject, body, options);
   }
-}
-
-function doPostTest() {
-  doPost(null);
 }
 
 function generateParams(data, databaseId) {
