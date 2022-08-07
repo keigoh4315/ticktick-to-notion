@@ -56,7 +56,7 @@ function doPost(e) {
   }
 }
 
-function test() {
+function doPostTest() {
   doPost(null);
 }
 
