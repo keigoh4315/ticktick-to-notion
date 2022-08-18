@@ -1,23 +1,34 @@
 class Notion {
-  constructor(auth) {
-    this.base_url = "https://api.notion.com/v1";
-    this.header = {
-      Authorization: `Bearer ${auth}`,
-      "Content-Type": "application/json",
-      "Notion-Version": "2022-06-28",
-    };
+  constructor(token) {
+    this.token = token;
+    this.baseUrl = "https://api.notion.com/v1";
+    this.notionVersion = "2022-06-28";
   }
 
-  createPage(params) {
-    const url = `${this.base_url}/pages`;
-    const options = {
-      method: "post",
-      headers: this.header,
-      muteHttpExceptions: true,
-      payload: JSON.stringify(params),
-    };
+  createPage(object) {
+    const url = this.getUrlPages();
+    const options = this.getPostOptions(object);
+
     const res = UrlFetchApp.fetch(url, options);
     return JSON.parse(res.getContentText());
+  }
+
+  getUrlPages() {
+    return `${this.baseUrl}/pages`;
+  }
+
+  getPostOptions(object) {
+    const options = {
+      method: "post",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+        "Notion-Version": this.notionVersion,
+      },
+      muteHttpExceptions: true,
+      payload: JSON.stringify(object),
+    };
+    return options;
   }
 }
 
@@ -39,9 +50,9 @@ function doPost(e) {
 
   const data = JSON.parse(formattedJsonString);
 
-  const params = generateParams(data, properties.getProperty("DATABASE_ID"));
+  const pageObject = generateParams(data, properties.getProperty("DATABASE_ID"));
 
-  const res = notion.createPage(params);
+  const res = notion.createPage(pageObject);
 
   // res["object"] = "error"; // error mail test
 
