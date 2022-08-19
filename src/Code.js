@@ -44,11 +44,7 @@ function doPost(e) {
     jsonString = e.postData.getDataAsString();
   }
 
-  const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
-  const formattedTaskContent = convertNL(jsonString.match(pattern)[0]);
-  const formattedJsonString = jsonString.replace(pattern, formattedTaskContent);
-
-  const data = JSON.parse(formattedJsonString);
+  const data = parseJson(jsonString);
 
   const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
 
@@ -71,13 +67,21 @@ function doPost(e) {
   }
 }
 
-/* TaskContent */
-function convertNL(str) {
+const parseJson = jsonString => {
+  const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
+  const taskContent = jsonString.match(pattern)[0];
+  const fmtTaskContent = convertNL(taskContent);
+  const fmtJsonString = jsonString.replace(pattern, fmtTaskContent);
+  const ret = JSON.parse(fmtJsonString);
+  return ret;
+};
+
+const convertNL = str => {
   return str
     .replace(/(\r\n)/g, "\n")
     .replace(/(\r)/g, "\n")
     .replace(/(\n)/g, "\\n");
-}
+};
 
 const createPageObj = (data, databaseId) => {
   let object = {
