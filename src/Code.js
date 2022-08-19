@@ -50,7 +50,7 @@ function doPost(e) {
 
   const data = JSON.parse(formattedJsonString);
 
-  const pageObject = generateParams(data, properties.getProperty("DATABASE_ID"));
+  const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
 
   const res = notion.createPage(pageObject);
 
@@ -71,8 +71,16 @@ function doPost(e) {
   }
 }
 
-function generateParams(data, databaseId) {
-  let params = {
+/* TaskContent */
+function convertNL(str) {
+  return str
+    .replace(/(\r\n)/g, "\n")
+    .replace(/(\r)/g, "\n")
+    .replace(/(\n)/g, "\\n");
+}
+
+const createPageObj = (data, databaseId) => {
+  let object = {
     parent: { database_id: databaseId },
     properties: {
       TaskName: {
@@ -90,6 +98,9 @@ function generateParams(data, databaseId) {
       Priority: {
         rich_text: [{ text: { content: data.Priority } }],
       },
+      // Priority: {
+      //   select: { name: data.Priority },
+      // },
       LinkToTask: {
         url: data.LinkToTask,
       },
@@ -98,22 +109,27 @@ function generateParams(data, databaseId) {
       },
     },
   };
-  const tags = generateMultiTags(data.Tag);
-  if (tags.length > 0) {
-    params["properties"]["Tag"] = { multi_select: tags };
-  }
-  params = addDate(params, data.StartDate, "StartDate", dtFormatter(data.StartDate));
-  params = addDate(params, data.EndDate, "EndDate", dtFormatter(data.EndDate));
-  return params;
-}
+  object = addTag(object, data.Tag);
+  object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
+  object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
+  return object;
+};
 
-/* TaskContent */
-function convertNL(str) {
-  return str
-    .replace(/(\r\n)/g, "\n")
-    .replace(/(\r)/g, "\n")
-    .replace(/(\n)/g, "\\n");
-}
+/* Tag */
+const addTag = (object, tagData) => {
+  const tags = [];
+  const tagsData = tagData.split(" ");
+  tagsData.forEach(tag => {
+    if (tag.length > 0) {
+      const fmtTag = tag.replace("#", "");
+      tags.push({ name: fmtTag });
+    }
+  });
+  if (tags.length > 0) {
+    object.properties.Tag = { multi_select: tags };
+  }
+  return object;
+};
 
 /* Date */
 function isDatetime(dtString) {
@@ -150,19 +166,6 @@ function addDate(params, dateStrings, key, value) {
     params["properties"][key] = { date: { start: value } };
   }
   return params;
-}
-
-/* Tag */
-function generateMultiTags(tagsString) {
-  const ret = [];
-  const tagList = tagsString.split(" ");
-  tagList.forEach(tag => {
-    if (tag.length > 0) {
-      const rmSharp = tag.replace("#", "");
-      ret.push({ name: rmSharp });
-    }
-  });
-  return ret;
 }
 
 /* Settings for properties */
