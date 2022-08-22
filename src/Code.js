@@ -100,11 +100,8 @@ const createPageObj = (data, databaseId) => {
         select: { name: data.List },
       },
       Priority: {
-        rich_text: [{ text: { content: data.Priority } }],
+        select: { name: data.Priority },
       },
-      // Priority: {
-      //   select: { name: data.Priority },
-      // },
       LinkToTask: {
         url: data.LinkToTask,
       },
