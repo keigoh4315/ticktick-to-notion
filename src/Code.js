@@ -91,7 +91,7 @@ const createPageObj = (data, databaseId) => {
         title: [{ text: { content: data.TaskName } }],
       },
       TaskContent: {
-        rich_text: [{ text: { content: data.TaskContent } }],
+        rich_text: [{ text: { content: contentFormatter(data.TaskContent) } }],
       },
       CompleteDate: {
         date: { start: dtFormatter(data.CompleteDate) },
@@ -114,6 +114,25 @@ const createPageObj = (data, databaseId) => {
   object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
   object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
   return object;
+};
+
+const contentFormatter = contentData => {
+  let ret = contentData;
+  if (ret == "") {
+    return ret;
+  }
+
+  const leading = /^\n/;
+  if (leading.test(ret)) {
+    ret = ret.slice(1);
+  }
+
+  const trailing = /\n$/;
+  if (trailing.test(ret)) {
+    ret = ret.slice(0, -1);
+  }
+
+  return ret;
 };
 
 /* Tag */
