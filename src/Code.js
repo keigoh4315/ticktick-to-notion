@@ -44,13 +44,9 @@ function doPost(e) {
     jsonString = e.postData.getDataAsString();
   }
 
-  const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
-  const formattedTaskContent = convertNL(jsonString.match(pattern)[0]);
-  const formattedJsonString = jsonString.replace(pattern, formattedTaskContent);
+  const data = parseJson(jsonString);
 
-  const data = JSON.parse(formattedJsonString);
-
-  const pageObject = generateParams(data, properties.getProperty("DATABASE_ID"));
+  const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
 
   const res = notion.createPage(pageObject);
 
@@ -71,15 +67,31 @@ function doPost(e) {
   }
 }
 
-function generateParams(data, databaseId) {
-  let params = {
+const parseJson = jsonString => {
+  const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
+  const taskContent = jsonString.match(pattern)[0];
+  const fmtTaskContent = convertNL(taskContent);
+  const fmtJsonString = jsonString.replace(pattern, fmtTaskContent);
+  const ret = JSON.parse(fmtJsonString);
+  return ret;
+};
+
+const convertNL = str => {
+  return str
+    .replace(/(\r\n)/g, "\n")
+    .replace(/(\r)/g, "\n")
+    .replace(/(\n)/g, "\\n");
+};
+
+const createPageObj = (data, databaseId) => {
+  let object = {
     parent: { database_id: databaseId },
     properties: {
       TaskName: {
         title: [{ text: { content: data.TaskName } }],
       },
       TaskContent: {
-        rich_text: [{ text: { content: data.TaskContent } }],
+        rich_text: [{ text: { content: contentFormatter(data.TaskContent) } }],
       },
       CompleteDate: {
         date: { start: dtFormatter(data.CompleteDate) },
@@ -88,7 +100,7 @@ function generateParams(data, databaseId) {
         select: { name: data.List },
       },
       Priority: {
-        rich_text: [{ text: { content: data.Priority } }],
+        select: { name: data.Priority },
       },
       LinkToTask: {
         url: data.LinkToTask,
@@ -98,22 +110,46 @@ function generateParams(data, databaseId) {
       },
     },
   };
-  const tags = generateMultiTags(data.Tag);
-  if (tags.length > 0) {
-    params["properties"]["Tag"] = { multi_select: tags };
-  }
-  params = addDate(params, data.StartDate, "StartDate", dtFormatter(data.StartDate));
-  params = addDate(params, data.EndDate, "EndDate", dtFormatter(data.EndDate));
-  return params;
-}
+  object = addTag(object, data.Tag);
+  object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
+  object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
+  return object;
+};
 
-/* TaskContent */
-function convertNL(str) {
-  return str
-    .replace(/(\r\n)/g, "\n")
-    .replace(/(\r)/g, "\n")
-    .replace(/(\n)/g, "\\n");
-}
+const contentFormatter = contentData => {
+  let ret = contentData;
+  if (ret == "") {
+    return ret;
+  }
+
+  const leading = /^\n/;
+  if (leading.test(ret)) {
+    ret = ret.slice(1);
+  }
+
+  const trailing = /\n$/;
+  if (trailing.test(ret)) {
+    ret = ret.slice(0, -1);
+  }
+
+  return ret;
+};
+
+/* Tag */
+const addTag = (object, tagData) => {
+  const tags = [];
+  const tagsData = tagData.split(" ");
+  tagsData.forEach(tag => {
+    if (tag.length > 0) {
+      const fmtTag = tag.replace("#", "");
+      tags.push({ name: fmtTag });
+    }
+  });
+  if (tags.length > 0) {
+    object.properties.Tag = { multi_select: tags };
+  }
+  return object;
+};
 
 /* Date */
 function isDatetime(dtString) {
@@ -150,19 +186,6 @@ function addDate(params, dateStrings, key, value) {
     params["properties"][key] = { date: { start: value } };
   }
   return params;
-}
-
-/* Tag */
-function generateMultiTags(tagsString) {
-  const ret = [];
-  const tagList = tagsString.split(" ");
-  tagList.forEach(tag => {
-    if (tag.length > 0) {
-      const rmSharp = tag.replace("#", "");
-      ret.push({ name: rmSharp });
-    }
-  });
-  return ret;
 }
 
 /* Settings for properties */
