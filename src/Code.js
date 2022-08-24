@@ -32,26 +32,23 @@ class Notion {
   }
 }
 
-function doPost(e) {
+const doPost = e => {
   const properties = PropertiesService.getScriptProperties();
   const notion = new Notion(properties.getProperty("NOTION_TOKEN"));
 
-  let jsonString;
-  if (typeof e === "undefined") {
-    jsonString = // json sample for test
-      '{\n  "TaskName": "Sample",\n  "TaskContent": "line one\r\nline two\r\nline three\nlist item 1\nlist item 2",\n  "CompleteDate": "July 27 2022 at 05:10PM",\n  "StartDate": "July 25 2022",\n  "EndDate": "July 27 2022",\n  "List": "Inbox",\n  "Priority": "None",\n  "Tag": "#Tag1 #Tag2",\n  "LinkToTask": "https://ticktick.com/home",\n  "CreatedAt": "July 25, 2022 at 09:20AM"\n}\n';
-  } else {
-    jsonString = e.postData.getDataAsString();
+  const contents = e.postData.contents;
+  const data = parseJson(contents);
+
+  if (data.authToken !== properties.getProperty("AUTH_TOKEN")) {
+    // TODO: エラー発生時の処理
+    Logger.log("認証に失敗しました");
+    return;
   }
 
-  const data = parseJson(jsonString);
-
   const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
-
   const res = notion.createPage(pageObject);
 
   // res["object"] = "error"; // error mail test
-
   if (res["object"] === "error") {
     const recipient = properties.getProperty("MAIL_ADDRESS");
     const subject = "[ERROR] Notion API Error";
@@ -65,7 +62,31 @@ function doPost(e) {
     const options = { name: "TickTick to Notion" };
     GmailApp.sendEmail(recipient, subject, body, options);
   }
-}
+};
+
+const testDoPost = () => {
+  const authToken = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
+  const sample = {
+    postData: {
+      contents: [
+        "{\n",
+        `  "authToken": "${authToken}",\n`,
+        '  "TaskName": "Sample",\n',
+        '  "TaskContent": "line one\r\nline two\r\nline three\r\n---\nlist item 1\nlist item 2\n",\n',
+        '  "CompleteDate": "July 27 2022 at 05:10PM",\n',
+        '  "StartDate": "July 25 2022",\n',
+        '  "EndDate": "July 27 2022",\n',
+        '  "List": "Inbox",\n',
+        '  "Priority": "None",\n',
+        '  "Tag": "#Tag1 #Tag2",\n',
+        '  "LinkToTask": "https://ticktick.com/home",\n',
+        '  "CreatedAt": "July 25, 2022 at 09:20AM"\n',
+        "}\n",
+      ].join(""),
+    },
+  };
+  doPost(sample);
+};
 
 const parseJson = jsonString => {
   const pattern = /\"TaskContent\": \"(.*?[\r\n]*?)*?\"/;
