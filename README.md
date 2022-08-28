@@ -24,7 +24,7 @@ Set IFTTT to trigger TickTick task completion and use Webhooks to notify this GA
 | StartDate    | 日付           |
 | EndDate      | 日付           |
 | List         | セレクト       |
-| Priority     | テキスト       |
+| Priority     | セレクト       |
 | Tag          | マルチセレクト |
 | LinkToTask   | URL            |
 | CreatedAt    | 日付           |
@@ -38,6 +38,7 @@ GAS プロジェクトのスクリプトプロパティに、以下を設定す�
 | NOTION_TOKEN | Notion インテグレーションのトークン     |
 | DATABASE_ID  | Notion データベースのデータベース ID    |
 | MAIL_ADDRESS | エラー通知をするための Gmail のアドレス |
+| AUTH_TOKEN   | 認証用のトークン                        |
 
 ## IFTTT
 
@@ -56,6 +57,7 @@ TickTick の「New completed task」をトリガーに設定する。
 
 Webhooks の「Make a web request」をアクションに設定する。
 GAS プロジェクトを Web API としてデプロイして、以下を設定する。
+authToken には GAS と同じ値を設定する。
 
 | Item         | Value                   |
 | ------------ | ----------------------- |
@@ -66,6 +68,7 @@ GAS プロジェクトを Web API としてデプロイして、以下を設定�
 
 ```
 {
+  "authToken": "",
   "TaskName": "{{TaskName}}",
   "TaskContent": "{{TaskContent}}",
   "CompleteDate": "{{CompleteDate}}",
