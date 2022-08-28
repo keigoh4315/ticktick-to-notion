@@ -210,19 +210,22 @@ function addDate(params, dateStrings, key, value) {
 }
 
 /* Settings for properties */
-function setNotionToken() {
+const setNotionToken = () => {
   PropertiesService.getScriptProperties().setProperty("NOTION_TOKEN", "{{yourToken}}");
-}
-function setNotionDbId() {
+};
+const setNotionDbId = () => {
   PropertiesService.getScriptProperties().setProperty("DATABASE_ID", "{{yourDatabaseId}}");
-}
-function setMailAddress() {
+};
+const setMailAddress = () => {
   PropertiesService.getScriptProperties().setProperty("MAIL_ADDRESS", "{{yourMailAddress}}");
-}
-function readProperties() {
+};
+const setAuthToken = () => {
+  PropertiesService.getScriptProperties().setProperty("AUTH_TOKEN", "{{yourAuthToken}}");
+};
+const readProperties = () => {
   const props = PropertiesService.getScriptProperties();
   const data = props.getProperties();
   for (var key in data) {
-    Logger.log("key: %s, Value: %s", key, data[key]);
+    Logger.log(`Key: ${key}, Value: ${data[key]}`);
   }
-}
+};
