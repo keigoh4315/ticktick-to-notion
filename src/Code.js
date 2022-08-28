@@ -32,6 +32,31 @@ class Notion {
   }
 }
 
+const testDoPost = () => {
+  const authToken = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
+  const sample = {
+    postData: {
+      contents: [
+        "{",
+        `  "authToken": "${authToken}",`,
+        '  "TaskName": "Sample",',
+        '  "TaskContent": "\r\nline one\r\nline two\r\nline three\r\n---\nlist item 1\nlist item 2\n",',
+        '  "CompleteDate": "July 27 2022 at 05:10PM",',
+        '  "StartDate": "July 25 2022",',
+        '  "EndDate": "July 27 2022",',
+        '  "List": "Inbox",',
+        '  "Priority": "None",',
+        '  "Tag": "#Tag1 #Tag2",',
+        '  "LinkToTask": "https://ticktick.com/home",',
+        '  "CreatedAt": "July 25, 2022 at 09:20AM"',
+        "}",
+        "",
+      ].join("\n"),
+    },
+  };
+  doPost(sample);
+};
+
 const doPost = e => {
   const properties = PropertiesService.getScriptProperties();
   const notion = new Notion(properties.getProperty("NOTION_TOKEN"));
@@ -62,30 +87,6 @@ const doPost = e => {
     const options = { name: "TickTick to Notion" };
     GmailApp.sendEmail(recipient, subject, body, options);
   }
-};
-
-const testDoPost = () => {
-  const authToken = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
-  const sample = {
-    postData: {
-      contents: [
-        "{\n",
-        `  "authToken": "${authToken}",\n`,
-        '  "TaskName": "Sample",\n',
-        '  "TaskContent": "line one\r\nline two\r\nline three\r\n---\nlist item 1\nlist item 2\n",\n',
-        '  "CompleteDate": "July 27 2022 at 05:10PM",\n',
-        '  "StartDate": "July 25 2022",\n',
-        '  "EndDate": "July 27 2022",\n',
-        '  "List": "Inbox",\n',
-        '  "Priority": "None",\n',
-        '  "Tag": "#Tag1 #Tag2",\n',
-        '  "LinkToTask": "https://ticktick.com/home",\n',
-        '  "CreatedAt": "July 25, 2022 at 09:20AM"\n',
-        "}\n",
-      ].join(""),
-    },
-  };
-  doPost(sample);
 };
 
 const parseJson = jsonString => {
