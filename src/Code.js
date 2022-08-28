@@ -113,7 +113,7 @@ const createPageObj = (data, databaseId) => {
         title: [{ text: { content: data.TaskName } }],
       },
       TaskContent: {
-        rich_text: [{ text: { content: contentFormatter(data.TaskContent) } }],
+        rich_text: [{ text: { content: formatContent(data.TaskContent) } }],
       },
       CompleteDate: {
         date: { start: dtFormatter(data.CompleteDate) },
@@ -135,29 +135,49 @@ const createPageObj = (data, databaseId) => {
   object = addTag(object, data.Tag);
   object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
   object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
+  object = addContent(object, data.TaskContent);
   return object;
 };
 
-const contentFormatter = contentData => {
-  let ret = contentData;
-  if (ret == "") {
-    return ret;
+const addContent = (object, taskContentData) => {
+  if (taskContentData == "") {
+    return object;
   }
-
-  const leading = /^\n/;
-  if (leading.test(ret)) {
-    ret = ret.slice(1);
+  const fmtTaskContent = formatContent(taskContentData);
+  const contents = fmtTaskContent.split("\n");
+  const children = [];
+  while (contents.length > 0 && contents[0] != "---") {
+    children.push({
+      object: "block",
+      type: "paragraph",
+      paragraph: { rich_text: [{ type: "text", text: { content: contents.shift() } }] },
+    });
   }
-
-  const trailing = /\n$/;
-  if (trailing.test(ret)) {
-    ret = ret.slice(0, -1);
+  if (contents.length > 0) {
+    contents.shift();
+    if (children.length > 0) {
+      children.push({
+        object: "block",
+        type: "paragraph",
+        paragraph: { rich_text: [] },
+      });
+    }
   }
-
-  return ret;
+  while (contents.length > 0) {
+    children.push({
+      object: "block",
+      type: "to_do",
+      to_do: { rich_text: [{ type: "text", text: { content: contents.shift() } }], checked: true },
+    });
+  }
+  object.children = children;
+  return object;
 };
 
-/* Tag */
+const formatContent = taskContentData => {
+  return taskContentData.replace(/^\n|\n$/g, "");
+};
+
 const addTag = (object, tagData) => {
   const tags = [];
   const tagsData = tagData.split(" ");
