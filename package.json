@@ -1,14 +1,12 @@
 {
   "name": "ticktick-to-notion",
   "version": "1.0.0",
-  "description": "",
   "main": "Code.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "keigoh4315",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/keigoh4315/ticktick-to-notion/issues"
   },
