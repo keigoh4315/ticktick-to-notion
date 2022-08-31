@@ -32,6 +32,7 @@ Set IFTTT to trigger TickTick task completion and use Webhooks to notify this GA
 ## GAS
 
 GAS プロジェクトのスクリプトプロパティに、以下を設定する。
+AUTH_TOKEN には、認証に用いる文字列を自分で用意して設定する。
 
 | Property     | Value                                   |
 | ------------ | --------------------------------------- |
