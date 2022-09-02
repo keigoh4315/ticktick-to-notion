@@ -74,23 +74,28 @@ const doPost = e => {
     return;
   }
 
-  const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
-  const res = notion.createPage(pageObject);
+  const pageObj = generatePageObj(data, properties.getProperty("DATABASE_ID"));
+  const res = notion.createPage(pageObj);
 
-  // res["object"] = "error"; // error mail test
   if (res["object"] === "error") {
-    const recipient = properties.getProperty("MAIL_ADDRESS");
-    const subject = "[ERROR] Notion API Error";
-    const body =
-      'There is an error in GAS Web API "TickTick to Notion".\n\n' +
-      `[TaskName] : ${data.TaskName}\n` +
-      `[CompleteDate] : ${data.CompleteDate}\n` +
-      `[List] : ${data.List}\n` +
-      `[Link] : ${data.LinkToTask}\n\n` +
-      `[Response] : \n${JSON.stringify(res)}`;
-    const options = { name: "TickTick to Notion" };
-    GmailApp.sendEmail(recipient, subject, body, options);
+    sendErrorMail(properties.getProperty("MAIL_ADDRESS"), data, res);
   }
+};
+
+const sendErrorMail = (address, data, res) => {
+  const recipient = address;
+  const subject = "[ERROR] Notion API Error";
+  const body = [
+    'There is an error in GAS Web API "TickTick to Notion".\n',
+    `[TaskName] : ${data.TaskName}`,
+    `[CompleteDate] : ${data.CompleteDate}`,
+    `[List] : ${data.List}`,
+    `[Link] : ${data.LinkToTask}`,
+    "[Response] :",
+    JSON.stringify(res),
+  ].join("\n");
+  const options = { name: "TickTick to Notion" };
+  GmailApp.sendEmail(recipient, subject, body, options);
 };
 
 const parseJson = jsonString => {
@@ -109,8 +114,8 @@ const convertNL = str => {
     .replace(/(\n)/g, "\\n");
 };
 
-const createPageObj = (data, databaseId) => {
-  let object = {
+const generatePageObj = (data, databaseId) => {
+  let obj = {
     parent: { database_id: databaseId },
     properties: {
       TaskName: {
@@ -136,16 +141,16 @@ const createPageObj = (data, databaseId) => {
       },
     },
   };
-  object = addTag(object, data.Tag);
-  object = addDate(object, data.StartDate, "StartDate");
-  object = addDate(object, data.EndDate, "EndDate");
-  object = addContent(object, data.TaskContent);
-  return object;
+  obj = addTag(obj, data.Tag);
+  obj = addDate(obj, data.StartDate, "StartDate");
+  obj = addDate(obj, data.EndDate, "EndDate");
+  obj = addContent(obj, data.TaskContent);
+  return obj;
 };
 
-const addContent = (object, taskContentData) => {
+const addContent = (obj, taskContentData) => {
   if (taskContentData == "") {
-    return object;
+    return obj;
   }
   const fmtTaskContent = formatContent(taskContentData);
   const contents = fmtTaskContent.split("\n");
@@ -174,15 +179,15 @@ const addContent = (object, taskContentData) => {
       to_do: { rich_text: [{ type: "text", text: { content: contents.shift() } }], checked: true },
     });
   }
-  object.children = children;
-  return object;
+  obj.children = children;
+  return obj;
 };
 
 const formatContent = taskContentData => {
   return taskContentData.replace(/^\n|\n$/g, "");
 };
 
-const addTag = (object, tagData) => {
+const addTag = (obj, tagData) => {
   const tags = [];
   const tagsData = tagData.split(" ");
   tagsData.forEach(tag => {
@@ -192,9 +197,9 @@ const addTag = (object, tagData) => {
     }
   });
   if (tags.length > 0) {
-    object.properties.Tag = { multi_select: tags };
+    obj.properties.Tag = { multi_select: tags };
   }
-  return object;
+  return obj;
 };
 
 const addDate = (obj, dateData, key) => {
@@ -205,8 +210,6 @@ const addDate = (obj, dateData, key) => {
 };
 
 const formatDate = dateData => {
-  const timezone = "+09:00";
-
   const dateArr = dateData.split(" ");
   const year = dateArr[2];
   const month = convertMonth(dateArr[0]);
@@ -218,6 +221,7 @@ const formatDate = dateData => {
   const timeArr = dateArr[4].replace("AM", ":AM").replace("PM", ":PM").split(":");
   const hour = convertHour(timeArr[0], timeArr[2]);
   const min = timeArr[1];
+  const timezone = "+09:00";
   return `${year}-${month}-${day}T${hour}:${min}:00.000${timezone}`;
 };
 
