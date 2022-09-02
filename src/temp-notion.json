@@ -20,7 +20,7 @@
       "select": { "name": "{{List}}" }
     },
     "Priority": {
-      "rich_text": [{ "text": { "content": "{{Priority}}" } }]
+      "select": { "name": "{{Priority}}" }
     },
     "Tag": {
       "multi_select": [{ "name": "{{Tag}}" }, { "name": "{{Tag}}" }]
@@ -31,5 +31,44 @@
     "CreatedAt": {
       "date": { "start": "{{CreatedAt}}" }
     }
-  }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{ "type": "text", "text": { "content": "{{TaskContentText}}" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{ "type": "text", "text": { "content": "{{TaskContentText}}" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": []
+      }
+    },
+    {
+      "object": "block",
+      "type": "to_do",
+      "to_do": {
+        "rich_text": [{ "type": "text", "text": { "content": "{{TaskContentCheckList}}" } }],
+        "checked": true
+      }
+    },
+    {
+      "object": "block",
+      "type": "to_do",
+      "to_do": {
+        "rich_text": [{ "type": "text", "text": { "content": "{{TaskContentCheckList}}" } }],
+        "checked": true
+      }
+    }
+  ]
 }
