@@ -5,30 +5,34 @@ class Notion {
     this.notionVersion = "2022-06-28";
   }
 
-  createPage(object) {
-    const url = this.getUrlPages();
-    const options = this.getPostOptions(object);
-
-    const res = UrlFetchApp.fetch(url, options);
-    return JSON.parse(res.getContentText());
+  createPage(obj) {
+    const path = "pages";
+    return this.request(path, "post", obj);
   }
 
-  getUrlPages() {
-    return `${this.baseUrl}/pages`;
-  }
-
-  getPostOptions(object) {
+  getOptions(method, payload) {
     const options = {
-      method: "post",
+      method: method,
       headers: {
         Authorization: `Bearer ${this.token}`,
         "Content-Type": "application/json",
         "Notion-Version": this.notionVersion,
       },
       muteHttpExceptions: true,
-      payload: JSON.stringify(object),
     };
+    if (payload !== undefined && payload !== null) {
+      options.payload = JSON.stringify(payload);
+    }
     return options;
+  }
+
+  request(path, method, payload) {
+    const url = `${this.baseUrl}/${path}`;
+    const options = this.getOptions(method, payload);
+
+    const res = UrlFetchApp.fetch(url, options);
+    Logger.log(res.getResponseCode());
+    return JSON.parse(res.getContentText());
   }
 }
 
