@@ -5,30 +5,34 @@ class Notion {
     this.notionVersion = "2022-06-28";
   }
 
-  createPage(object) {
-    const url = this.getUrlPages();
-    const options = this.getPostOptions(object);
-
-    const res = UrlFetchApp.fetch(url, options);
-    return JSON.parse(res.getContentText());
+  createPage(obj) {
+    const path = "pages";
+    return this.request(path, "post", obj);
   }
 
-  getUrlPages() {
-    return `${this.baseUrl}/pages`;
-  }
-
-  getPostOptions(object) {
+  getOptions(method, payload) {
     const options = {
-      method: "post",
+      method: method,
       headers: {
         Authorization: `Bearer ${this.token}`,
         "Content-Type": "application/json",
         "Notion-Version": this.notionVersion,
       },
       muteHttpExceptions: true,
-      payload: JSON.stringify(object),
     };
+    if (payload !== undefined && payload !== null) {
+      options.payload = JSON.stringify(payload);
+    }
     return options;
+  }
+
+  request(path, method, payload) {
+    const url = `${this.baseUrl}/${path}`;
+    const options = this.getOptions(method, payload);
+
+    const res = UrlFetchApp.fetch(url, options);
+    Logger.log(res.getResponseCode());
+    return JSON.parse(res.getContentText());
   }
 }
 
@@ -70,23 +74,28 @@ const doPost = e => {
     return;
   }
 
-  const pageObject = createPageObj(data, properties.getProperty("DATABASE_ID"));
-  const res = notion.createPage(pageObject);
+  const pageObj = generatePageObj(data, properties.getProperty("DATABASE_ID"));
+  const res = notion.createPage(pageObj);
 
-  // res["object"] = "error"; // error mail test
   if (res["object"] === "error") {
-    const recipient = properties.getProperty("MAIL_ADDRESS");
-    const subject = "[ERROR] Notion API Error";
-    const body =
-      'There is an error in GAS Web API "TickTick to Notion".\n\n' +
-      `[TaskName] : ${data.TaskName}\n` +
-      `[CompleteDate] : ${data.CompleteDate}\n` +
-      `[List] : ${data.List}\n` +
-      `[Link] : ${data.LinkToTask}\n\n` +
-      `[Response] : \n${JSON.stringify(res)}`;
-    const options = { name: "TickTick to Notion" };
-    GmailApp.sendEmail(recipient, subject, body, options);
+    sendErrorMail(properties.getProperty("MAIL_ADDRESS"), data, res);
   }
+};
+
+const sendErrorMail = (address, data, res) => {
+  const recipient = address;
+  const subject = "[ERROR] Notion API Error";
+  const body = [
+    'There is an error in GAS Web API "TickTick to Notion".\n',
+    `[TaskName] : ${data.TaskName}`,
+    `[CompleteDate] : ${data.CompleteDate}`,
+    `[List] : ${data.List}`,
+    `[Link] : ${data.LinkToTask}`,
+    "[Response] :",
+    JSON.stringify(res),
+  ].join("\n");
+  const options = { name: "TickTick to Notion" };
+  GmailApp.sendEmail(recipient, subject, body, options);
 };
 
 const parseJson = jsonString => {
@@ -105,8 +114,8 @@ const convertNL = str => {
     .replace(/(\n)/g, "\\n");
 };
 
-const createPageObj = (data, databaseId) => {
-  let object = {
+const generatePageObj = (data, databaseId) => {
+  let obj = {
     parent: { database_id: databaseId },
     properties: {
       TaskName: {
@@ -116,7 +125,7 @@ const createPageObj = (data, databaseId) => {
         rich_text: [{ text: { content: formatContent(data.TaskContent) } }],
       },
       CompleteDate: {
-        date: { start: dtFormatter(data.CompleteDate) },
+        date: { start: formatDate(data.CompleteDate) },
       },
       List: {
         select: { name: data.List },
@@ -128,20 +137,20 @@ const createPageObj = (data, databaseId) => {
         url: data.LinkToTask,
       },
       CreatedAt: {
-        date: { start: dtFormatter(data.CreatedAt) },
+        date: { start: formatDate(data.CreatedAt) },
       },
     },
   };
-  object = addTag(object, data.Tag);
-  object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
-  object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
-  object = addContent(object, data.TaskContent);
-  return object;
+  obj = addTag(obj, data.Tag);
+  obj = addDate(obj, data.StartDate, "StartDate");
+  obj = addDate(obj, data.EndDate, "EndDate");
+  obj = addContent(obj, data.TaskContent);
+  return obj;
 };
 
-const addContent = (object, taskContentData) => {
+const addContent = (obj, taskContentData) => {
   if (taskContentData == "") {
-    return object;
+    return obj;
   }
   const fmtTaskContent = formatContent(taskContentData);
   const contents = fmtTaskContent.split("\n");
@@ -170,15 +179,15 @@ const addContent = (object, taskContentData) => {
       to_do: { rich_text: [{ type: "text", text: { content: contents.shift() } }], checked: true },
     });
   }
-  object.children = children;
-  return object;
+  obj.children = children;
+  return obj;
 };
 
 const formatContent = taskContentData => {
   return taskContentData.replace(/^\n|\n$/g, "");
 };
 
-const addTag = (object, tagData) => {
+const addTag = (obj, tagData) => {
   const tags = [];
   const tagsData = tagData.split(" ");
   tagsData.forEach(tag => {
@@ -188,47 +197,59 @@ const addTag = (object, tagData) => {
     }
   });
   if (tags.length > 0) {
-    object.properties.Tag = { multi_select: tags };
+    obj.properties.Tag = { multi_select: tags };
   }
-  return object;
+  return obj;
 };
 
-/* Date */
-function isDatetime(dtString) {
-  return dtString.indexOf("AM") >= 0 || dtString.indexOf("PM") >= 0;
-}
-function rmDtNoise(dtString) {
-  const rmAt = dtString.replace(" at ", " ");
-  const blAM = rmAt.replace("AM", " AM");
-  const blPM = blAM.replace("PM", " PM");
-  return blPM;
-}
-function formatDate(dt, isDt, timezone = "+09:00", sep = "-") {
-  const year = dt.getFullYear();
-  const month = ("00" + (dt.getMonth() + 1)).slice(-2);
-  const day = ("00" + dt.getDate()).slice(-2);
-  const date = `${year}${sep}${month}${sep}${day}`;
-  if (!isDt) {
-    return date;
+const addDate = (obj, dateData, key) => {
+  if (dateData.length > 0) {
+    obj["properties"][key] = { date: { start: formatDate(dateData) } };
   }
-  const hour = ("00" + dt.getHours()).slice(-2);
-  const min = ("00" + dt.getMinutes()).slice(-2);
-  const datetime = `${date}T${hour}:${min}:00.000${timezone}`;
-  return datetime;
-}
-function dtFormatter(dtString) {
-  const fmtDtString = rmDtNoise(dtString);
-  const isDT = isDatetime(fmtDtString);
-  const dtParse = Date.parse(fmtDtString);
-  const dt = new Date(dtParse);
-  return formatDate(dt, isDT);
-}
-function addDate(params, dateStrings, key, value) {
-  if (dateStrings.length > 0) {
-    params["properties"][key] = { date: { start: value } };
+  return obj;
+};
+
+const formatDate = dateData => {
+  const dateArr = dateData.split(" ");
+  const year = dateArr[2];
+  const month = convertMonth(dateArr[0]);
+  const day = ("0" + dateArr[1].replace(",", "")).slice(-2);
+  if (dateArr.indexOf("at") < 0) {
+    return `${year}-${month}-${day}`;
   }
-  return params;
-}
+
+  const timeArr = dateArr[4].replace("AM", ":AM").replace("PM", ":PM").split(":");
+  const hour = convertHour(timeArr[0], timeArr[2]);
+  const min = timeArr[1];
+  const timezone = "+09:00";
+  return `${year}-${month}-${day}T${hour}:${min}:00.000${timezone}`;
+};
+
+const convertMonth = monthString => {
+  const months = {
+    January: "01",
+    February: "02",
+    March: "03",
+    April: "04",
+    May: "05",
+    June: "06",
+    July: "07",
+    August: "08",
+    September: "09",
+    October: "10",
+    November: "11",
+    December: "12",
+  };
+  return months[monthString];
+};
+
+const convertHour = (hourString, ampm) => {
+  let ret = hourString.replace("12", "00");
+  if (ampm == "PM") {
+    ret = String(Number(ret) + 12);
+  }
+  return ret;
+};
 
 /* Settings for properties */
 const setNotionToken = () => {
