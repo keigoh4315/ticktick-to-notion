@@ -120,7 +120,7 @@ const createPageObj = (data, databaseId) => {
         rich_text: [{ text: { content: formatContent(data.TaskContent) } }],
       },
       CompleteDate: {
-        date: { start: dtFormatter(data.CompleteDate) },
+        date: { start: formatDate(data.CompleteDate) },
       },
       List: {
         select: { name: data.List },
@@ -132,13 +132,13 @@ const createPageObj = (data, databaseId) => {
         url: data.LinkToTask,
       },
       CreatedAt: {
-        date: { start: dtFormatter(data.CreatedAt) },
+        date: { start: formatDate(data.CreatedAt) },
       },
     },
   };
   object = addTag(object, data.Tag);
-  object = addDate(object, data.StartDate, "StartDate", dtFormatter(data.StartDate));
-  object = addDate(object, data.EndDate, "EndDate", dtFormatter(data.EndDate));
+  object = addDate(object, data.StartDate, "StartDate");
+  object = addDate(object, data.EndDate, "EndDate");
   object = addContent(object, data.TaskContent);
   return object;
 };
@@ -197,42 +197,55 @@ const addTag = (object, tagData) => {
   return object;
 };
 
-/* Date */
-function isDatetime(dtString) {
-  return dtString.indexOf("AM") >= 0 || dtString.indexOf("PM") >= 0;
-}
-function rmDtNoise(dtString) {
-  const rmAt = dtString.replace(" at ", " ");
-  const blAM = rmAt.replace("AM", " AM");
-  const blPM = blAM.replace("PM", " PM");
-  return blPM;
-}
-function formatDate(dt, isDt, timezone = "+09:00", sep = "-") {
-  const year = dt.getFullYear();
-  const month = ("00" + (dt.getMonth() + 1)).slice(-2);
-  const day = ("00" + dt.getDate()).slice(-2);
-  const date = `${year}${sep}${month}${sep}${day}`;
-  if (!isDt) {
-    return date;
+const addDate = (obj, dateData, key) => {
+  if (dateData.length > 0) {
+    obj["properties"][key] = { date: { start: formatDate(dateData) } };
   }
-  const hour = ("00" + dt.getHours()).slice(-2);
-  const min = ("00" + dt.getMinutes()).slice(-2);
-  const datetime = `${date}T${hour}:${min}:00.000${timezone}`;
-  return datetime;
-}
-function dtFormatter(dtString) {
-  const fmtDtString = rmDtNoise(dtString);
-  const isDT = isDatetime(fmtDtString);
-  const dtParse = Date.parse(fmtDtString);
-  const dt = new Date(dtParse);
-  return formatDate(dt, isDT);
-}
-function addDate(params, dateStrings, key, value) {
-  if (dateStrings.length > 0) {
-    params["properties"][key] = { date: { start: value } };
+  return obj;
+};
+
+const formatDate = dateData => {
+  const timezone = "+09:00";
+
+  const dateArr = dateData.split(" ");
+  const year = dateArr[2];
+  const month = convertMonth(dateArr[0]);
+  const day = ("0" + dateArr[1].replace(",", "")).slice(-2);
+  if (dateArr.indexOf("at") < 0) {
+    return `${year}-${month}-${day}`;
   }
-  return params;
-}
+
+  const timeArr = dateArr[4].replace("AM", ":AM").replace("PM", ":PM").split(":");
+  const hour = convertHour(timeArr[0], timeArr[2]);
+  const min = timeArr[1];
+  return `${year}-${month}-${day}T${hour}:${min}:00.000${timezone}`;
+};
+
+const convertMonth = monthString => {
+  const months = {
+    January: "01",
+    February: "02",
+    March: "03",
+    April: "04",
+    May: "05",
+    June: "06",
+    July: "07",
+    August: "08",
+    September: "09",
+    October: "10",
+    November: "11",
+    December: "12",
+  };
+  return months[monthString];
+};
+
+const convertHour = (hourString, ampm) => {
+  let ret = hourString.replace("12", "00");
+  if (ampm == "PM") {
+    ret = String(Number(ret) + 12);
+  }
+  return ret;
+};
 
 /* Settings for properties */
 const setNotionToken = () => {
