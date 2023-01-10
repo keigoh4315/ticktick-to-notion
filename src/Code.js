@@ -69,8 +69,7 @@ const doPost = e => {
   const data = parseJson(contents);
 
   if (data.authToken !== properties.getProperty("AUTH_TOKEN")) {
-    // TODO: エラー発生時の処理
-    Logger.log("認証に失敗しました");
+    Logger.log("Authentication failed.");
     return;
   }
 
