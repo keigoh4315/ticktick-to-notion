@@ -69,7 +69,7 @@ const doPost = e => {
   const data = parseJson(contents);
 
   if (data.authToken !== properties.getProperty("AUTH_TOKEN")) {
-    Logger.log("Authentication failed.");
+    Logger.log("Authentication failed!");
     return;
   }
 
