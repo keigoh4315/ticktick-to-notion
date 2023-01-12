@@ -35,31 +35,6 @@ class Notion {
   }
 }
 
-function testDoPost() {
-  const authToken = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
-  const sample = {
-    postData: {
-      contents: [
-        "{",
-        `  "authToken": "${authToken}",`,
-        '  "TaskName": "Sample",',
-        '  "TaskContent": "\r\nline one\r\nline two\r\nline three\r\n---\nlist item 1\nlist item 2\n",',
-        '  "CompleteDate": "July 27 2022 at 05:10PM",',
-        '  "StartDate": "July 25 2022",',
-        '  "EndDate": "July 27 2022",',
-        '  "List": "Inbox",',
-        '  "Priority": "None",',
-        '  "Tag": "#Tag1 #Tag2",',
-        '  "LinkToTask": "https://ticktick.com/home",',
-        '  "CreatedAt": "July 25, 2022 at 09:20AM"',
-        "}",
-        "",
-      ].join("\n"),
-    },
-  };
-  doPost(sample);
-}
-
 function doPost(e) {
   const props = PropertiesService.getScriptProperties();
   const notion = new Notion(props.getProperty("NOTION_TOKEN"));
@@ -249,25 +224,4 @@ function convertHour(hourString, ampm) {
     ret = String(Number(ret) + 12);
   }
   return ret;
-}
-
-/* Settings for properties */
-function setNotionToken() {
-  PropertiesService.getScriptProperties().setProperty("NOTION_TOKEN", "{{yourToken}}");
-}
-function setNotionDbId() {
-  PropertiesService.getScriptProperties().setProperty("DATABASE_ID", "{{yourDatabaseId}}");
-}
-function setMailAddress() {
-  PropertiesService.getScriptProperties().setProperty("MAIL_ADDRESS", "{{yourMailAddress}}");
-}
-function setAuthToken() {
-  PropertiesService.getScriptProperties().setProperty("AUTH_TOKEN", "{{yourAuthToken}}");
-}
-function readProperties() {
-  const props = PropertiesService.getScriptProperties();
-  const data = props.getProperties();
-  for (var key in data) {
-    Logger.log(`Key: ${key}, Value: ${data[key]}`);
-  }
 }
