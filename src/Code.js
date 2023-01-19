@@ -129,28 +129,28 @@ function addContent(obj, taskContentData, separator) {
   const contents = fmtTaskContent.split("\n");
   const children = [];
   let isTodo = false;
-  while (contents.length > 0) {
-    if (contents[0] === separator) {
-      contents.shift();
-      if (contents.length > 0) {
+  for (let index = 0; index < contents.length; index++) {
+    const line = contents[index];
+    if (line === separator) {
+      isTodo = true;
+      if (index > 0) {
         children.push({
           object: "block",
           type: "paragraph",
           paragraph: { rich_text: [] },
         });
-        isTodo = true;
       }
-    } else if (isTodo) {
+    } else if (!isTodo) {
       children.push({
         object: "block",
-        type: "to_do",
-        to_do: { rich_text: [{ type: "text", text: { content: contents.shift() } }], checked: true },
+        type: "paragraph",
+        paragraph: { rich_text: [{ type: "text", text: { content: line } }] },
       });
     } else {
       children.push({
         object: "block",
-        type: "paragraph",
-        paragraph: { rich_text: [{ type: "text", text: { content: contents.shift() } }] },
+        type: "to_do",
+        to_do: { rich_text: [{ type: "text", text: { content: line } }], checked: true },
       });
     }
   }
